@@ -10,8 +10,10 @@ if ! [[ $(which python) ]]; then
   exit
 fi
 
+PIP_INSTALLED=$(which pip)
+
 # check to make sure pip is installed
-if ! [[ $(which pip) ]]; then
+if ! [[ $PIP_INSTALLED ]]; then
   echo "Installing pip (the Python package manager)..."
   curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
   if [ $? -eq 1 ]; then
@@ -36,6 +38,33 @@ if ! [ -d ".sdk" ]; then
   sudo rm -rf sdk.tar.gz; sudo mv google-cloud-sdk .sdk
 fi
 
-echo "Done! Initializing the Google Cloud SDK now..."
+# login to google cloud now
+echo "Done! Logging in to Google Cloud now..."
+echo ""
+echo "-------------------------------------------------------------------------"
+echo ""
 
-.sdk/bin/gcloud init --console-only
+.sdk/bin/gcloud config configurations activate default &> /dev/null
+.sdk/bin/gcloud auth login &> /dev/null
+
+if [ $? -eq 1 ]; then
+  echo "Google Cloud login failed.  Reverting installation..."
+  if ! [[ $PIP_INSTALLED ]]; then
+    for i in $( pip freeze ); do sudo pip uninstall -y $i &> /dev/null; done
+    sudo python -m pip uninstall -y pip setuptools &> /dev/null
+  fi
+
+  sudo rm -rf .sdk
+  sudo rm -rf ~/.config/gcloud
+  exit
+fi
+
+# create project for backup instances
+echo "Login complete! Creating backup project now..."
+.sdk/bin/gcloud projects create $USER-automatic-backup --quiet &> /dev/null
+.sdk/bin/gcloud config set project $USER-automatic-backup --quiet &> /dev/null
+.sdk/bin/gcloud services enable compute.googleapis.com --quiet &> /dev/null
+
+# begin creating instances on google cloud
+echo "Project creation complete! Initializing instances now..."
+.sdk/bin/gcloud compute instances create backup-instance1 --zone us-east1-b --machine-type f1-micro --quiet &> /dev/null
