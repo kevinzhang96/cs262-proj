@@ -1,0 +1,15 @@
+#!/usr/bin/expect -f
+set timeout -1
+spawn .sdk/bin/gcloud init --console-only
+
+expect {
+    "Please enter your numeric choice:" { send -- "1\r\n" }
+    "You must log in to continue. Would you like to log in (Y/n)?" { send -- "y\r\n" }
+}
+expect {
+    "Please enter your numeric choice:" { send -- "1\r\n" }
+}
+expect {
+    "Please enter" { send -- "1\r\n" }
+}
+expect "awrgoianwroig"

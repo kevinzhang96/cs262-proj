@@ -36,4 +36,6 @@ if ! [ -d ".sdk" ]; then
   sudo rm -rf sdk.tar.gz; sudo mv google-cloud-sdk .sdk
 fi
 
-echo "Done!"
+echo "Done! Initializing the Google Cloud SDK now..."
+
+.sdk/bin/gcloud init --console-only
