@@ -2,14 +2,20 @@ import os
 import json
 import hashlib
 
-# read big files in 64kb chunks so we don't hog memory
-BLOCKSIZE = 65536
-MAX_HASH = 2 ** 40
-# use sha-1 hashing
-hasher = hashlib.sha1()
-# store the directory's file structure. key/value = path/filename
+'''
+	JSON describing the contents of the directory.
+	
+	Keys are either directory of file names:
+		- sub_dir => { hash: <sub_dir hash>, contents: <sub_dir json> }
+		- file => { path: <full_path>, hash: <hash> }
+'''
 tree = {}
 
+BLOCKSIZE = 65536				# read files in 64kb chunks
+MAX_HASH = 2 ** 40				# max hash size (40 bytes)
+hasher = hashlib.sha1()			# use sha-1 hashing
+
+# calculate the hash of a file
 def get_file_hash(filename):
 	with open(filename, 'rb') as file:
 	    buf = file.read(BLOCKSIZE)
@@ -18,15 +24,11 @@ def get_file_hash(filename):
 	        buf = file.read(BLOCKSIZE)
 	return hasher.hexdigest()[:10]
 
+# walk through all directories from deepest to shallowest
 for root, dirs, files in os.walk(".", topdown=False):
-	# take off leading ./
-	root = root[2:]
-	
-	# json for this folder's files
-	root_json = {}
-	
-	# combined hash of all files in this directory
-	root_hash = 0
+	root = root[2:]				# take off leading ./
+	root_json = {}				# json for this folder's files
+	root_hash = 0				# combined hash of all files/dirs
 	
 	# iterate through all files and store hashes + paths
 	for name in files:
@@ -35,7 +37,7 @@ for root, dirs, files in os.walk(".", topdown=False):
 		root_hash += int(file_hash, 16)
 		root_hash %= MAX_HASH
 		root_json[name] = {
-			"path": path, 
+			"path": path,
 			"hash": file_hash
 		}
 	
