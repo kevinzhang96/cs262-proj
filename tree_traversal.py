@@ -13,48 +13,64 @@ tree = {}
 
 BLOCKSIZE = 65536				# read files in 64kb chunks
 MAX_HASH = 2 ** 40				# max hash size (40 bytes)
+dir_hashes = {}					# dir path => hash pairs
 hasher = hashlib.sha1()			# use sha-1 hashing
 
 # calculate the hash of a file
-def get_file_hash(filename):
-	with open(filename, 'rb') as file:
+def get_file_hash(file_path):
+	with open(file_path, 'rb') as file:
 	    buf = file.read(BLOCKSIZE)
 	    while len(buf):
 	        hasher.update(buf)
 	        buf = file.read(BLOCKSIZE)
+	hasher.update(file_path)
 	return hasher.hexdigest()[:10]
 
-# walk through all directories from deepest to shallowest
-for root, dirs, files in os.walk(".", topdown=False):
-	root = root[2:]				# take off leading ./
-	root_json = {}				# json for this folder's files
-	root_hash = 0				# combined hash of all files/dirs
-	
-	# iterate through all files and store hashes + paths
-	for name in files:
-		path = os.path.join(root, name)
-		file_hash = get_file_hash(path)
-		root_hash += int(file_hash, 16)
-		root_hash %= MAX_HASH
-		root_json[name] = {
-			"path": path,
-			"hash": file_hash
-		}
-	
-	# add hashes of all folders here to this directory's hash
-	for name in dirs:
-		root_hash += int(tree[name]['hash'], 16)
-		root_hash %= MAX_HASH
-	
-	# insert this directory's hash and contents
-	root_hash = hex(root_hash)
-	if root_hash[-1] == "L":
-		root_hash = root_hash[:-1]
-	tree[root] = {
-		'hash': root_hash[2:],
-		'contents': root_json
-	}
+# function to recursively get the hashes for a directory
+def get_json(dir):
+	for root, dirs, files in os.walk(dir, topdown=True):
+		dir_json = {}				# json for this folder's files
+		dir_hash = 0				# combined hash of all files/dirs
+
+		# go through all files and insert the appropriate file hash
+		for dir_file in files:
+			path = os.path.join(root, dir_file)
+			file_hash = get_file_hash(path)
+			dir_hash += int(file_hash, 16)
+			dir_hash %+ MAX_HASH
+			dir_json[dir_file] = {
+				"path": path,
+				"hash": file_hash,
+				"type": "file",
+			}
+
+		# go through all directories and recursively get JSON for them
+		for sub_dir in dirs:
+			sub_dir_path = os.path.join(root, sub_dir)
+			sub_dir_hash, sub_dir_json = get_json(sub_dir_path)
+			dir_json[sub_dir] = {
+				"path": sub_dir_path,
+				"hash": sub_dir_hash,
+				"type": "dir",
+				"contents": sub_dir_json,
+			}
+			dir_hash += int(sub_dir_hash, 16)
+			dir_hash %+ MAX_HASH
+		
+		# compute the final hash for this directory root
+		dir_hash = hex(dir_hash)
+		if dir_hash[-1] == "L":
+			dir_hash = dir_hash[:-1]
+		dir_hash = dir_hash[2:]
+		
+		# can immediately return; only care about top dir
+		return (dir_hash, dir_json)
 
 # dump the directory tree into JSON file
 with open('tree.json', 'w') as file:
-    json.dump(tree, file)
+    root_hash, root_json = get_json("."); json.dump({
+		"path": ".",
+		"hash": root_hash,
+		"type": "dir",
+		"contents": root_json,
+	}, file)
