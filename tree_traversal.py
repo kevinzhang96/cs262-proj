@@ -2,18 +2,19 @@ import os
 import json
 import hashlib
 
+# read big files in 64kb chunks so we don't hog memory
 BLOCKSIZE = 65536
 # use sha-1 hashing
 hasher = hashlib.sha1()
-# Store the directory's file structure. Key/Value = path/filename
+# store the directory's file structure. key/value = path/filename
 tree = {}
 
 def file_hash(filename):
-	with open(filename, 'rb') as afile:
-	    buf = afile.read(BLOCKSIZE)
-	    while len(buf) > 0:
+	with open(filename, 'rb') as file:
+	    buf = file.read(BLOCKSIZE)
+	    while len(buf):
 	        hasher.update(buf)
-	        buf = afile.read(BLOCKSIZE)
+	        buf = file.read(BLOCKSIZE)
 	return hasher.hexdigest()
 
 for root, dirs, files in os.walk(".", topdown=False):
@@ -24,5 +25,5 @@ for root, dirs, files in os.walk(".", topdown=False):
 		tree[os.path.join(root, name)] = 'directory'
 
 # dump the directory tree into JSON file
-with open('tree.json', 'w') as outfile:
-    json.dump(tree, outfile)
+with open('tree.json', 'w') as file:
+    json.dump(tree, file)
