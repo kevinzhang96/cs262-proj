@@ -1,4 +1,2 @@
-from tree_traversal import TreeTraversal
-
-tt = TreeTraversal()
-tt.dump()
+from crawler import Crawler
+from assistant import STFPAssistant

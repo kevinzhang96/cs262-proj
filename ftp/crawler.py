@@ -2,7 +2,7 @@ import os
 import json
 import hashlib
 
-class TreeTraversal:
+class Crawler:
 	def __init__(self):
 		'''
 			JSON describing the contents of the directory.
@@ -27,7 +27,7 @@ class TreeTraversal:
 
 	# function to recursively get the hashes for a directory
 	def get_json(self, dir):
-		for root, dirs, files in os.walk(dir, topdown=True):
+		for root, dirs, files in os.walk(os.path.abspath(dir), topdown=True):
 			dir_json = {}				# json for this folder's files
 			dir_hash = 0				# combined hash of all files/dirs
 
@@ -64,13 +64,15 @@ class TreeTraversal:
 			
 			# can immediately return; only care about top dir
 			return (dir_hash, dir_json)
+		
+		# return trivial dir if no results
+		return (0, {})
 
-	def dump(self):
+	def dump(self, target):
 		# dump the directory tree into JSON file
-		with open('tree.json', 'w') as file:
-		    root_hash, root_json = self.get_json("."); json.dump({
-				"path": ".",
-				"hash": root_hash,
-				"type": "dir",
-				"contents": root_json,
-			}, file)
+		root_hash, root_json = self.get_json(target); return {
+			"path": ".",
+			"hash": root_hash,
+			"type": "dir",
+			"contents": root_json,
+		}
