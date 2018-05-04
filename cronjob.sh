@@ -1,1 +1,1 @@
-(crontab -l ; echo "* * * * * cd $PWD && python client.py") | sort - | uniq - | crontab -
+(crontab -l ; echo "* * * * * python $PWD/ftp/client.py") | sort - | uniq - | crontab -

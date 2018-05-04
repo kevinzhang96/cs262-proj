@@ -35,6 +35,9 @@ else
   sudo pip install --upgrade pip &> /dev/null
 fi
 
+### Paramiko =============================================================== ###
+pip install paramiko --user
+
 ### GCloud ================================================================= ###
 if ! [ -d ".sdk" ]; then
   echo "Installing the Google Cloud SDK..."
@@ -48,37 +51,48 @@ fi
 ### Google Cloud Setup ===================================================== ###
 ################################################################################
 
+export PATH=$PATH:$(pwd)/.sdk/bin
+
 ### Login ================================================================== ###
 echo "Done! Logging in to Google Cloud now..."
 echo ""
 echo "-------------------------------------------------------------------------"
 echo ""
-.sdk/bin/gcloud config configurations activate default &> /dev/null
-.sdk/bin/gcloud auth login &> /dev/null
+gcloud config configurations activate default &> /dev/null
+gcloud auth login &> /dev/null
 
 ### Project================================================================= ###
 echo "Login complete! Creating backup project now..."
-.sdk/bin/gcloud projects create $USERNAME-automatic-backup --quiet &> /dev/null
-.sdk/bin/gcloud config set project $USERNAME-automatic-backup --quiet &> /dev/null
-.sdk/bin/gcloud services enable compute.googleapis.com --quiet &> /dev/null
+gcloud projects create $USERNAME-automatic-backup --quiet &> /dev/null
+gcloud config set project $USERNAME-automatic-backup --quiet &> /dev/null
+gcloud services enable compute.googleapis.com --quiet &> /dev/null
+
+### SSH Keys =============================================================== ###
+echo "Instance creation complete! Adding SSH keys now..."
+if ! [ -f $HOME/.ssh/google_compute_engine.pub ]; then
+  ssh-keygen -t rsa -f $HOME/.ssh/google_compute_engine -N ''
+fi
+chown 600 $HOME/.ssh/google_compute_engine.pub
+chown 600 $HOME/.ssh/google_compute_engine
+
+echo $USERNAME:$(cat $HOME/.ssh/google_compute_engine.pub) > $HOME/.ssh/google_compute_engine.txt
+gcloud compute project-info add-metadata --metadata-from-file ssh-keys=$HOME/.ssh/google_compute_engine.txt
+rm $HOME/.ssh/google_compute_engine.txt
+
+### Resource Bucket ======================================================== ###
+gsutil mb -l us-east1 gs://$USERNAME-backup
+gsutil cp $HOME/.ssh/google_compute_engine gs://$USERNAME-backup
+gsutil cp $HOME/.ssh/google_compute_engine.pub gs://$USERNAME-backup
+gsutil cp -r ftp gs://$USERNAME-backup
 
 ### Instances ============================================================== ###
 echo "Project creation complete! Initializing instances now..."
-.sdk/bin/gcloud compute instances create backup-instance1 \
-  --metadata-from-file startup-script=server.sh \
+gcloud compute instances create backup-instance1 \
+  --metadata-from-file startup-script=startup.sh \
   --zone us-east1-b \
   --machine-type f1-micro \
   --image-family=ubuntu-1604-lts \
   --image-project=ubuntu-os-cloud \
-  --scopes=storage-full \
+  --scopes=storage-full,https://www.googleapis.com/auth/compute \
   --tags=http-server,https-server \
   --quiet &> /dev/null
-
-### SSH Keys =============================================================== ###
-echo "Instance creation complete! Adding SSH keys now..."
-if ! [ -f ~/.ssh/google_compute_engine.pub ]; then
-  ssh-keygen -t rsa -f $HOME/.ssh/google_compute_engine -N ''
-fi
-echo $USERNAME:$(cat ~/.ssh/google_compute_engine.pub) > ~/.ssh/google_compute_engine.txt
-gcloud compute project-info add-metadata --metadata-from-file ssh-keys=$HOME/.ssh/google_compute_engine.txt
-rm ~/.ssh/google_compute_engine.txt
