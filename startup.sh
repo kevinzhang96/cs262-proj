@@ -1,4 +1,7 @@
 #! /bin/bash
+USERNAME=$(curl -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/attributes/username")
+cd /home/$USERNAME
+
 if ! [ -d backup ]; then
     export GCSFUSE_REPO=gcsfuse-`lsb_release -c -s`
     echo "deb http://packages.cloud.google.com/apt $GCSFUSE_REPO main" | sudo tee /etc/apt/sources.list.d/gcsfuse.list
@@ -9,10 +12,14 @@ sudo apt-get update
 sudo apt-get install -y gcsfuse
 sudo apt-get install -y python-pip
 
-if ! [ -d backup ]; then
-    gsutil mb -l us-east1 gs://$USER-$HOSTNAME
-    mkdir backup; gcsfuse $USER-$HOSTNAME backup
+pip install paramiko
+
+if ! [ -d "backup" ]; then
+    gsutil mb -l us-east1 gs://$USERNAME-$HOSTNAME
+    mkdir backup; gcsfuse $USERNAME-$HOSTNAME backup
 fi
 
-gsutil cp -r gs://$USER-backup/* .
+gsutil cp -r gs://$USERNAME-backup/* .
 cd ftp; sudo python server.py
+
+exit

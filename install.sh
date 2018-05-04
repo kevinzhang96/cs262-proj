@@ -89,6 +89,7 @@ gsutil cp -r ftp gs://$USERNAME-backup
 echo "Project creation complete! Initializing instances now..."
 gcloud compute instances create backup-instance1 \
   --metadata-from-file startup-script=startup.sh \
+  --metadata username=$USERNAME \
   --zone us-east1-b \
   --machine-type f1-micro \
   --image-family=ubuntu-1604-lts \
