@@ -50,8 +50,8 @@ class SFTPAssistant:
             raise Exception
 
         self.ftp_client.get(
-            self.r_path + '/' + file,
-            self.l_path + '/' + file
+            os.path.join(self.r_path, file),
+            os.path.join(self.l_path, file)
         )
 
     def put(self, file):
@@ -59,8 +59,16 @@ class SFTPAssistant:
             raise Exception
 
         self.ftp_client.put(
-            self.l_path + '/' + file,
-            self.r_path + '/' + file
+            os.path.join(self.l_path, file),
+            os.path.join(self.r_path, file)
+        )
+
+    def mkdir(self, dir):
+        if not self.ssh_client or not self.ftp_client:
+            raise Exception
+
+        self.ftp_client.mkdir(
+            os.path.join(self.r_path, dir)
         )
 
     def upload_all(self):
@@ -73,7 +81,7 @@ class SFTPAssistant:
             # go through all directories and create them on remote
             for sub_dir in dirs:
                 sub_dir_path = os.path.join(root, sub_dir)
-                self.ftp_client.mkdir(self.r_path + sub_dir_path[len(self.l_path):])
+                self.mkdir(sub_dir_path[len(self.l_path):])
 
     def download_all(self):
         raise Exception
