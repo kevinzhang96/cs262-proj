@@ -22,7 +22,6 @@ class Crawler:
 		    while len(buf):
 		        hasher.update(buf)
 		        buf = file.read(self.blocksize)
-		hasher.update(file_path)
 		return hasher.hexdigest()[:10]
 
 	# function to recursively get the hashes for a directory
