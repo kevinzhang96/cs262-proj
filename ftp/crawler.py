@@ -13,17 +13,17 @@ class Crawler:
 		'''
 		self.blocksize = 65536				# read files in 64kb chunks
 		self.max_hash = 2 ** 40				# max hash size (40 bytes)
-		self.hasher = hashlib.sha1()			# use sha-1 hashing
 
 	# calculate the hash of a file
 	def get_file_hash(self, file_path):
+		hasher = hashlib.sha1()
 		with open(file_path, 'rb') as file:
 		    buf = file.read(self.blocksize)
 		    while len(buf):
-		        self.hasher.update(buf)
+		        hasher.update(buf)
 		        buf = file.read(self.blocksize)
-		self.hasher.update(file_path)
-		return self.hasher.hexdigest()[:10]
+		hasher.update(file_path)
+		return hasher.hexdigest()[:10]
 
 	# function to recursively get the hashes for a directory
 	def get_json(self, dir):
