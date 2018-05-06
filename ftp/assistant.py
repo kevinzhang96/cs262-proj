@@ -1,4 +1,5 @@
 import paramiko
+import os
 
 class SFTPAssistant:
     def __init__(self, local, ssh):
@@ -18,15 +19,19 @@ class SFTPAssistant:
         
         ssh_client = paramiko.SSHClient()
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh_client.connect(
-            hostname=ip, 
-            username=username, 
-            key_filename=self.ssh_file
-        )
-        self.ssh_client = ssh_client
+        try:
+            ssh_client.connect(
+                hostname=ip,
+                username=username,
+                key_filename=self.ssh_file
+            )
+            self.ssh_client = ssh_client
 
-        ftp_client = ssh_client.open_sftp()
-        self.ftp_client = ftp_client
+            ftp_client = ssh_client.open_sftp()
+            self.ftp_client = ftp_client
+            return 1
+        except:
+            return 0
 
     def close(self):
         if self.ssh_client:
@@ -57,3 +62,18 @@ class SFTPAssistant:
             self.l_path + '/' + file,
             self.r_path + '/' + file
         )
+
+    def upload_all(self):
+        for root, dirs, files in os.walk(self.l_path, topdown=True):
+            # go through all files and transfer them to remote
+            for dir_file in files:
+                path = os.path.join(root, dir_file)
+                self.put(path[len(self.l_path):])
+
+            # go through all directories and create them on remote
+            for sub_dir in dirs:
+                sub_dir_path = os.path.join(root, sub_dir)
+                self.ftp_client.mkdir(self.r_path + sub_dir_path[len(self.l_path):])
+
+    def download_all(self):
+        raise Exception
