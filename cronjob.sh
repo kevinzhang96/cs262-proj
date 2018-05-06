@@ -1,1 +1,1 @@
-(crontab -l ; echo "* * * * * python $PWD/ftp/client.py") | sort - | uniq - | crontab -
+(crontab -l ; echo "0 * * * * python $PWD/ftp/client.py"; echo 'MAILTO=""') | sort - | uniq - | crontab -
