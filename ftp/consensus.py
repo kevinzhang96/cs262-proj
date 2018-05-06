@@ -1,7 +1,16 @@
 import json
 from crawler import Crawler
 
-# returns a list of all files in a directory
+'''
+	Walks through a directory and returns a list of all files and folders
+	contained inside it.
+
+	Returns:
+	(
+		[ <list of files in the directory> ],
+		[ <list of folders in the directory> ]
+	)
+'''
 def walk(dir):
 	assert dir['type'] == 'dir'
 	files, folders = [], []
@@ -15,7 +24,16 @@ def walk(dir):
 			folders += subfolders
 	return files, folders
 
-# gets all files unique to dir 1 (not in dir 2)
+'''
+	Calculates all files and folders unique to a JSON object vs. another JSON
+	object.  Both JSON objects should be formatted according to our Crawler.
+
+	Returns:
+	(
+		[ <list of files unique to dir1> ],
+		[ <list of folders unique to dir1> ]
+	)
+'''
 def diff_helper(dir1, dir2):
 	if dir1['hash'] == dir2['hash']:
 		return []
@@ -45,7 +63,22 @@ def diff_helper(dir1, dir2):
 			folders += r[1]
 	return files, folders
 
-# acc: (PATHs of unique files/dirs in dir1, PATHs of unique files/dirs in dir2)
+'''
+	Calculates the difference between two JSON objects returned by our Crawler
+	class, describing two different directories.
+
+	Returns a tuple of the following form:
+	(
+		(
+			[ <list of files unique to dir1> ],
+			[ <list of dirs unique to dir1> ]
+		),
+		(
+			[ <list of files unique to dir2> ],
+			[ <list of dirs unique to dir2> ]
+		)
+	)
+'''
 def diff(dir1, dir2):
 	assert dir1['type'] == 'dir' and dir2['type'] == 'dir'
 	return (diff_helper(dir1, dir2), diff_helper(dir2, dir1))

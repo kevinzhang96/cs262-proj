@@ -2,19 +2,52 @@ import os
 import json
 import hashlib
 
+'''
+	Utility class used to calculate a JSON description of a desired directory.
+
+	Objects are either files or directories, and have the following properties:
+	- Directory: hash, contents, name, path
+	- File: hash, name, path
+
+	The value of `contents` in a directory JSON object is a dictionary with
+	object names for keys and objects for values. An example JSON object is
+	below:
+
+	{
+		"type": "dir",
+		"name": "foo",
+		"hash": "14aw9awrn2",
+		"contents": {
+			"bar": {
+				"type": "file",
+				"name": "bar",
+				"hash": "13awmo149"
+			},
+			"empty": {
+				"type": "dir",
+				"name": "empty",
+				"hash": "a14goian",
+				"contents": {}
+			}
+		}
+	}
+
+	The above JSON describes the directory below:
+	d foo
+		f bar
+		d empty
+
+	File hashes are completely dependent on the file's contents, while directory
+	hashes are dependent both on the contents of the directory and the directory
+	location.
+'''
 class Crawler:
 	def __init__(self):
-		'''
-			JSON describing the contents of the directory.
-			
-			Keys are either directory of file names:
-				- sub_dir => { hash: <sub_dir hash>, contents: <sub_dir json> }
-				- file => { path: <full_path>, hash: <hash> }
-		'''
 		self.blocksize = 65536				# read files in 64kb chunks
 		self.max_hash = 2 ** 40				# max hash size (40 bytes)
 
-	# calculate the hash of a file
+	# calculate the hash of a file using SHA-1
+	# hash depends completely on file contents
 	def get_file_hash(self, file_path):
 		hasher = hashlib.sha1()
 		with open(file_path, 'rb') as file:
@@ -24,8 +57,11 @@ class Crawler:
 		        buf = file.read(self.blocksize)
 		return hasher.hexdigest()[:10]
 
-	# function to recursively get the hashes for a directory
+	# computes the JSON described above for a given directory
 	def get_json(self, dir):
+		if not os.path.isdir(dir):
+			raise Exception
+
 		for root, dirs, files in os.walk(os.path.abspath(dir), topdown=True):
 			dir_json = {}				# json for this folder's files
 			dir_hash = 0				# combined hash of all files/dirs
@@ -64,13 +100,17 @@ class Crawler:
 			# can immediately return; only care about top dir
 			return (dir_hash, dir_json)
 		
-		# return trivial dir if no results
-		return (0, {})
+		# if we get here, something went wrong
+		raise Exception
 
 	def dump(self, target):
+		if not os.path.isdir(target):
+			raise Exception
+
 		# dump the directory tree into JSON file
-		root_hash, root_json = self.get_json(target); return {
-			"path": ".",
+		root_hash, root_json = self.get_json(target)
+		return {
+			"path": os.path.abspath(target),
 			"hash": root_hash,
 			"type": "dir",
 			"contents": root_json,
