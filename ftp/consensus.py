@@ -1,4 +1,5 @@
 import json
+from crawler import Crawler
 
 # returns a list of all files in a directory
 def walk(dir):
@@ -19,7 +20,7 @@ def diff_helper(dir1, dir2):
 	if dir1['hash'] == dir2['hash']:
 		return []
 
-	files = []
+	files, folders = [], []
 	for name, obj in dir1['contents'].items():
 		assert obj['type'] == 'file' or obj['type'] == 'dir'
 		if obj['type'] == 'file':
@@ -31,21 +32,20 @@ def diff_helper(dir1, dir2):
 				files.append(obj['path'])
 		
 		if obj['type'] == 'dir':
-			if name not in dir2['contents']:
-				files += walk(obj)[0]
+			if name not in dir2['contents'] or dir2['contents'][name]['type'] == 'file':
+				r = walk(obj)
+				files += r[0]
+				folders.append(obj['path'])
+				folders += r[1]
 				continue
 			if dir2['contents'][name]['hash'] == obj['hash']:
 				continue
-			if dir2['contents'][name]['type'] == 'file':
-				files += walk(obj)[0]
-			else:
-				r = diff_helper(obj, dir2['contents'][name])
-				files += diff_helper(obj, dir2['contents'][name])
-	return files
+			r = diff_helper(obj, dir2['contents'][name])
+			files += r[0]
+			folders += r[1]
+	return files, folders
 
 # acc: (PATHs of unique files/dirs in dir1, PATHs of unique files/dirs in dir2)
 def diff(dir1, dir2):
 	assert dir1['type'] == 'dir' and dir2['type'] == 'dir'
-	dir1_unique = diff_helper(dir1, dir2)
-	dir2_unique = diff_helper(dir2, dir1)
-	return (dir1_unique, dir2_unique)
+	return (diff_helper(dir1, dir2), diff_helper(dir2, dir1))
