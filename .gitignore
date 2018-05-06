@@ -1,3 +1,6 @@
 .sdk
 .sdk/**
-tree.json
+**.json
+**/**.json
+**.pyc
+**/**.pyc
