@@ -5,8 +5,6 @@ from json_helper import Crawler, diff
 from connection import SFTPConnection, InfoConnection
 from consensus import run_consensus
 
-TIMEOUT=1
-
 ips = filter(len, open("../config/ips").read().split("\n"))
 config = open("../config/install").read().split("\n")
 username = filter(lambda k: "USERNAME" in k, config)[0].split("=")[1]
@@ -20,16 +18,8 @@ for server_ip in ips:
 
     # attempt to grab metadata info about the server instance
     c = InfoConnection(server_ip)
-    start_time = time.time()
-    backoff = 1
-    connected = True
-    while not c.connect():
-        if time.time() >= start_time + TIMEOUT:
-            connected = False; break
-        backoff *= 2
-        time.sleep(backoff)
-    if not connected:
-        print "Connecting to", server_ip, "failed."
+    if not c.connect():
+        print "Couldn't get any info from", server_ip
         continue
     
     # grab metadata info
@@ -44,16 +34,9 @@ for server_ip in ips:
     client_dirs.sort(key=lambda d: d.count("/"), reverse=False)
     
     # attempt to initialize a SFTP connection
-    s = SFTPConnection(CLIENT_BACKUP_DIR, "../ssh/google_compute_engine", timeout=TIMEOUT)
-    start_time = time.time()
-    backoff = 1
-    while not s.connect(server_ip, SERVER_BACKUP_DIR + "/", username):
-        if time.time() >= start_time + TIMEOUT:
-            connected = False; break
-        backoff *= 2
-        time.sleep(backoff)
-    if not connected:
-        print "Connecting to", server_ip, "failed."
+    s = SFTPConnection(CLIENT_BACKUP_DIR, "../ssh/google_compute_engine")
+    if not s.connect(server_ip, SERVER_BACKUP_DIR + "/", username):
+        print "Couldn't open a file transfer connection to", server_ip
         continue
 
     # go through and transfer all files and folders
@@ -76,6 +59,7 @@ for server_ip in ips:
             s.put(client_file)
     except IOError as e:
         print "Updating the server failed with error", str(e)
+        continue
 
 leader = random.choice(ips)
 run_consensus(leader, ips)

@@ -1,43 +1,51 @@
-import paramiko
 import os
+import paramiko
+import time
 from util import create_socket
 
+TIMEOUT = 60
+
 class SFTPConnection:
-	def __init__(self, local, ssh, timeout=60):
+	def __init__(self, local, ssh):
 		'''
 			Utility class; connects to a remote host given the appropriate local
 			and remote folder prefixes. For the Google Cloud instances, the 
 			prefix is probably "../backup"; the client prefix shouldn't be known 
 			except by the client.
 		'''
-		assert isinstance(timeout, (int, long))
 		self.l_path = local
 		self.ssh_file = ssh
-		self.timeout = timeout
 
 	def connect(self, ip, remote, username):
 		self.host = ip
 		self.r_path = remote
 		self.u_name = username
 		
-		ssh_client = paramiko.SSHClient()
-		ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-		self.ssh_client = ssh_client
-		try:
-			ssh_client.connect(
-				hostname=ip,
-				username=username,
-				key_filename=self.ssh_file,
-				timeout=self.timeout
-			)
-			self.ssh_client = ssh_client
+		start_time = time.time()
+		backoff = 1
+		while time.time() < start_time + TIMEOUT:
+			try:
+				ssh_client = paramiko.SSHClient()
+				ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+				ssh_client.connect(
+					hostname=ip,
+					username=username,
+					key_filename=self.ssh_file,
+					timeout=TIMEOUT
+				)
+				self.ssh_client = ssh_client
 
-			ftp_client = ssh_client.open_sftp()
-			ftp_client.chdir(self.r_path)
-			self.ftp_client = ftp_client
-			return 1
-		except:
-		    return 0
+				ftp_client = ssh_client.open_sftp()
+				ftp_client.chdir(self.r_path)
+				self.ftp_client = ftp_client
+				return 1
+			except:
+				self.ssh_client = None
+				self.ftp_client = None
+				time.sleep(backoff)
+				backoff *= 2
+				continue
+		return 0
 
 	def close(self):
 		if self.ssh_client:
@@ -99,13 +107,19 @@ class InfoConnection():
 
 	def connect(self):
 		assert self.sock is None
-		try:
-			self.sock = create_socket()
-			self.sock.connect((self.replica_ip, 9000))
-			return 1
-		except:
-			self.sock = None
-			return 0
+		start_time = time.time()
+		backoff = 1
+		while time.time() < start_time + TIMEOUT:
+			try:
+				self.sock = create_socket()
+				self.sock.connect((self.replica_ip, 9000))
+				return 1
+			except:
+				self.sock = None
+				time.sleep(backoff)
+				backoff *= 2
+				continue
+		return 0
 
 	def close(self):
 		assert self.sock is not None
