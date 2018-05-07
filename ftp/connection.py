@@ -1,5 +1,6 @@
 import paramiko
 import os
+from util import create_socket
 
 class SFTPConnection:
     def __init__(self, local, ssh):

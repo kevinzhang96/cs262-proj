@@ -9,8 +9,10 @@ from util import create_socket
 
 PORT_NUMBER = 9000
 _crawler = Crawler()
-HOME_DIR = os.path.expanduser("~")
-BACKUP_DIR = os.path.join(HOME_DIR, "backup")
+config = open("../config/install").read().split("\n")
+config = filter(lambda k: "USERNAME" in k, config)[0]
+username = config.split("=")[1]
+BACKUP_DIR = '/home/' + username + "/backup"
 SERVER_IP = None
 
 class ServerHandler(threading.Thread):

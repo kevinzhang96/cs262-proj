@@ -120,7 +120,7 @@ for i in $(seq 1 $N_REPLICAS); do
     --image-family=ubuntu-1604-lts \
     --image-project=ubuntu-os-cloud \
     --scopes=storage-full,https://www.googleapis.com/auth/compute \
-    --tags=http-server,https-server,frontend 1>> .log 2>&1
+    --tags=http-server,https-server 1>> .log 2>&1
 done
 gcloud compute firewall-rules create 'allow-9000-in' --allow tcp:9000,udp:9000,icmp --direction=IN
 gcloud compute firewall-rules create 'allow-9000-out' --allow tcp:9000,udp:9000,icmp --direction=OUT
