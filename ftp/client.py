@@ -23,6 +23,7 @@ for server_ip in ips:
         continue
     
     # grab metadata info
+    c.receive_ip(server_ip)
     server_json = c.get_json()
     server_json = json.loads(server_json.replace('\'', '\"'))
 
@@ -67,4 +68,5 @@ c = InfoConnection(leader)
 if not c.connect():
     print "Couldn't connect to leader", leader
 else:
+    c.receive_ip(leader)
     c.run_consensus()

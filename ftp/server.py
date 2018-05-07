@@ -61,7 +61,7 @@ class ServerHandler(threading.Thread):
 
     def consensus(self):
         peer_ips = filter(len, open("../config/ips").read().split("\n"))
-        run_consensus(SERVER_IP, peer_ips)
+        run_consensus(SERVER_IP, peer_ips, username)
 
     def receive_ip(self):
         ip_len = int(self.conn.recv(2))

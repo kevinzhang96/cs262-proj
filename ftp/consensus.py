@@ -1,4 +1,6 @@
-from connection import SFTPConnection
+import json
+from connection import InfoConnection, SFTPConnection
+from json_helper import Crawler, diff
 
 '''
     Consensus algorithm to be run on any server.
@@ -32,7 +34,33 @@ from connection import SFTPConnection
     peers that were reachable (not simply the list of all peers). This ensures 
     that we have a true majority where applicable.
 '''
-def run_consensus(leader, peers):
+def run_consensus(leader, peers, username):
     print "Running consensus with leader", leader
     print "All IPs:", peers
-    pass
+    peers = filter(lambda k: k != leader, peers)
+
+    '''
+        Steps 1 and 2: connect to each peer and obtain the JSON descriptors.
+    '''
+    descriptors = {}
+    for peer in peers:
+        c = InfoConnection(peer)
+        if not c.connect():
+            continue
+        descriptors[peer] = json.loads(c.get_json().replace("\'", "\""))
+
+    n_peers = 1 + len(descriptors)
+    '''
+        Step 3: Calculate the majority consensus.
+    '''
+    leader_json = Crawler().dump("/home/" + username + "/backup")
+    differences = {
+        peer: diff(leader_json, descriptors[peer])
+        for peer in descriptors
+    }
+    files = {}
+    folders = {}
+    for peer, difference in differences.items():
+        (client_files, client_dirs) = differences[0]
+        (server_files, server_dirs) = differences[1]
+        
