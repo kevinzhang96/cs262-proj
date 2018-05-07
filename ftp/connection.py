@@ -3,15 +3,17 @@ import os
 from util import create_socket
 
 class SFTPConnection:
-	def __init__(self, local, ssh):
+	def __init__(self, local, ssh, timeout=60):
 		'''
 			Utility class; connects to a remote host given the appropriate local
 			and remote folder prefixes. For the Google Cloud instances, the 
 			prefix is probably "../backup"; the client prefix shouldn't be known 
 			except by the client.
 		'''
+		assert isinstance(timeout, (int, long))
 		self.l_path = local
 		self.ssh_file = ssh
+		self.timeout = timeout
 
 	def connect(self, ip, remote, username):
 		self.host = ip
@@ -25,7 +27,8 @@ class SFTPConnection:
 			ssh_client.connect(
 				hostname=ip,
 				username=username,
-				key_filename=self.ssh_file
+				key_filename=self.ssh_file,
+				timeout=self.timeout
 			)
 			self.ssh_client = ssh_client
 
@@ -96,8 +99,13 @@ class InfoConnection():
 
 	def connect(self):
 		assert self.sock is None
-		self.sock = create_socket()
-		self.sock.connect((self.replica_ip, 9000))
+		try:
+			self.sock = create_socket()
+			self.sock.connect((self.replica_ip, 9000))
+			return 1
+		except:
+			self.sock = None
+			return 0
 
 	def close(self):
 		assert self.sock is not None
