@@ -1,21 +1,20 @@
+import os
 import socket
 import sys
 import threading
 import time
-from os.path import expanduser, join
 from crawler import Crawler
 from util import createSocket
 
 PORT_NUMBER = 9000
 _crawler = Crawler()
-HOME_DIR = expanduser("~")
-BACKUP_DIR = join(HOME_DIR, "backup")
+HOME_DIR = os.path.expanduser("~")
+BACKUP_DIR = os.path.join(HOME_DIR, "backup")
 
 SERVER_IP = None
-SERVER_PEERS = []
 
 class Handler(threading.Thread):
-    
+
     def __init__(self, conn, addr):
         threading.Thread.__init__(self)
         self.conn = conn
@@ -50,8 +49,6 @@ class Handler(threading.Thread):
                 self.consensus()
             elif action == "2":
                 self.receive_ip()
-            elif action == "3":
-                self.get_peers()
             else:
                 print "Unknown action", action
                 break
@@ -67,14 +64,6 @@ class Handler(threading.Thread):
         ip_len = int(self.conn.recv(2))
         SERVER_IP = self.conn.recv(ip_len)
         print SERVER_IP
-
-    def get_peers(self):
-        SERVER_PEERS = []
-        num_peers = int(self.conn.recv(2))
-        for _ in xrange(num_peers):
-            ip_len = int(self.conn.recv(2))
-            SERVER_PEERS.append(self.conn.recv(ip_len))
-        print SERVER_PEERS
 
 # create a socket and start listening for connections
 sock = createSocket()

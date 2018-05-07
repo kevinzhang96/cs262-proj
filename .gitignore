@@ -1,6 +1,10 @@
 .sdk
 .sdk/**
-**.json
-**/**.json
-**.pyc
-**/**.pyc
+*.json
+*/*.json
+*.pyc
+*/*.pyc
+ssh/
+ssh/**
+config/
+config/**

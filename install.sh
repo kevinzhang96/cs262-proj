@@ -4,7 +4,18 @@ if [ $EUID != 0 ]; then
     exit $?
 fi
 
+################################################################################
+### Configuration Parameters =============================================== ###
+################################################################################
+N_REPLICAS=3
 USERNAME=$(who am i | awk '{print $1}')
+PROJECT_BUCKET="gs://$USERNAME-backup"
+CLIENT_DIR=$(dirname `dirname $PWD`)/backup
+mkdir config
+echo "N_REPLICAS=3" >> config/install
+echo "USERNAME=$USERNAME" >> config/install
+echo "PROJECT_BUCKET=$PROJECT_BUCKET" >> config/install
+echo "CLIENT_DIR=$CLIENT_DIR" >> config/install
 
 ################################################################################
 ### Package and Library Installs =========================================== ###
@@ -79,21 +90,35 @@ echo $USERNAME:$(cat $HOME/.ssh/google_compute_engine.pub) > $HOME/.ssh/google_c
 gcloud compute project-info add-metadata --metadata-from-file ssh-keys=$HOME/.ssh/google_compute_engine.txt
 rm $HOME/.ssh/google_compute_engine.txt
 
-### Resource Bucket ======================================================== ###
-gsutil mb -l us-east1 gs://$USERNAME-backup
-gsutil cp $HOME/.ssh/google_compute_engine gs://$USERNAME-backup
-gsutil cp $HOME/.ssh/google_compute_engine.pub gs://$USERNAME-backup
-gsutil cp -r ftp gs://$USERNAME-backup
-
 ### Instances ============================================================== ###
 echo "Project creation complete! Initializing instances now..."
-gcloud compute instances create backup-instance1 \
-  --metadata-from-file startup-script=startup.sh \
-  --metadata username=$USERNAME \
-  --zone us-east1-b \
-  --machine-type f1-micro \
-  --image-family=ubuntu-1604-lts \
-  --image-project=ubuntu-os-cloud \
-  --scopes=storage-full,https://www.googleapis.com/auth/compute \
-  --tags=http-server,https-server \
-  --quiet &> /dev/null
+for i in $(seq 1 $N_REPLICAS); do
+  gcloud compute instances create backup-instance$i \
+    --metadata-from-file startup-script=startup.sh \
+    --metadata username=$USERNAME \
+    --zone us-east1-b \
+    --machine-type f1-micro \
+    --image-family=ubuntu-1604-lts \
+    --image-project=ubuntu-os-cloud \
+    --scopes=storage-full,https://www.googleapis.com/auth/compute \
+    --tags=http-server,https-server \
+    --quiet &> /dev/null
+done
+
+### IP Addresses =========================================================== ###
+gcloud --format="value(networkInterfaces[0].accessConfigs[0].natIP)" compute instances list \
+  > config/ips
+
+### SSH Keys =============================================================== ###
+mkdir ssh
+cp $HOME/.ssh/google_compute_engine ssh
+cp $HOME/.ssh/google_compute_engine.pub ssh
+
+### Resource Bucket ======================================================== ###
+gsutil mb -l us-east1 $PROJECT_BUCKET
+gsutil cp -rom ssh $PROJECT_BUCKET
+gsutil cp -rom ftp $PROJECT_BUCKET
+gsutil cp -rom config $PROJECT_BUCKET
+
+### Update Cron Job ======================================================== ###
+(crontab -l ; echo "0 * * * * python $PWD/ftp/client.py"; echo 'MAILTO=""') | sort - | uniq - | crontab -

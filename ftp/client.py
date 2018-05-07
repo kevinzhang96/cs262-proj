@@ -61,7 +61,3 @@ class ReplicaConnection():
 	def send_replica_ip(self):
 		assert self.sock is not None
 		self.sock.send("2" + str(len(self.replica_ip)) + self.replica_ip)
-
-	def send_peer_ips(self, ips):
-		assert self.sock is not 
-		self.sock.send()

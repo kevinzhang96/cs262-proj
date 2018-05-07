@@ -13,5 +13,6 @@ sudo python -m pip uninstall -y pip setuptools &> /dev/null
 # remove the SDK and configs
 sudo rm -rf .sdk
 sudo rm -rf ~/.config/gcloud
+sudo rm -rf ssh ips.txt
 
 echo "Done!"
