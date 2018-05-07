@@ -97,7 +97,6 @@ class InfoConnection():
 	def connect(self):
 		assert self.sock is None
 		self.sock = create_socket()
-		print self.replica_ip
 		self.sock.connect((self.replica_ip, 9000))
 
 	def close(self):

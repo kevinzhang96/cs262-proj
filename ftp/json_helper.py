@@ -66,12 +66,16 @@ class Crawler:
 			dir_json = {}				# json for this folder's files
 			dir_hash = 0				# combined hash of all files/dirs
 
+			# compute hash of all object names in directory
+			hasher = hashlib.sha1()
+
 			# go through all files and insert the appropriate file hash
 			for dir_file in files:
 				path = os.path.join(root, dir_file)
 				file_hash = self.get_file_hash(path)
+				hasher.update(dir_file)
 				dir_hash += int(file_hash, 16)
-				dir_hash %+ self.max_hash
+				dir_hash %= self.max_hash
 				dir_json[dir_file] = {
 					"path": path,
 					"hash": file_hash,
@@ -88,10 +92,13 @@ class Crawler:
 					"type": "dir",
 					"contents": sub_dir_json,
 				}
+				hasher.update(sub_dir)
 				dir_hash += int(sub_dir_hash, 16)
-				dir_hash %+ self.max_hash
+				dir_hash %= self.max_hash
 			
 			# compute the final hash for this directory root
+			dir_hash += int(hasher.hexdigest()[:10], 16)
+			dir_hash %= self.max_hash
 			dir_hash = hex(dir_hash)
 			if dir_hash[-1] == "L":
 				dir_hash = dir_hash[:-1]
@@ -178,6 +185,8 @@ def diff_helper(dir1, dir2):
 			r = diff_helper(obj, dir2['contents'][name])
 			files += r[0]
 			folders += r[1]
+	files.sort(key=lambda f: f.count("/"))
+	folders.sort(key=lambda d: d.count("/"))
 	return files, folders
 
 
