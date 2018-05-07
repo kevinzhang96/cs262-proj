@@ -1,3 +1,4 @@
+import json
 import os
 import socket
 import sys
@@ -56,7 +57,7 @@ class ServerHandler(threading.Thread):
                 break
         
     def send_json(self):
-        self.conn.send(str(_crawler.dump(BACKUP_DIR)))
+        self.conn.send(json.dumps(_crawler.dump(BACKUP_DIR)))
 
     def consensus(self):
         peer_ips = filter(len, open("../config/ips").read().split("\n"))

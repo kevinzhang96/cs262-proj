@@ -102,18 +102,16 @@ printf "Adding SSH keys to the project... "
 if ! [ -f $HOME/.ssh/google_compute_engine.pub ]; then
   ssh-keygen -t rsa -f $HOME/.ssh/google_compute_engine -N '' 1>> .log 2>&1
 fi
-chown 600 $HOME/.ssh/google_compute_engine.pub
 
 echo $USERNAME:$(cat $HOME/.ssh/google_compute_engine.pub) > google_compute_engine.txt
 gcloud compute project-info add-metadata --metadata-from-file ssh-keys=google_compute_engine.txt 1>> .log 2>&1
-rm google_compute_engine.txt
 echo "done."
 
 ### Instances ============================================================== ###
 printf "Initializing backup instances... "
 for i in $(seq 1 $N_REPLICAS); do
   gcloud compute instances create backup-$RANDOM_NUM-$i \
-    --metadata-from-file startup-script=startup.sh \
+    --metadata-from-file startup-script=startup.sh,ssh-keys=google_compute_engine.txt \
     --metadata username=$USERNAME,random_num=$RANDOM_NUM \
     --zone us-east1-b \
     --machine-type f1-micro \
@@ -124,6 +122,7 @@ for i in $(seq 1 $N_REPLICAS); do
 done
 gcloud compute firewall-rules create 'allow-9000-in' --allow tcp:9000,udp:9000,icmp --direction=IN
 gcloud compute firewall-rules create 'allow-9000-out' --allow tcp:9000,udp:9000,icmp --direction=OUT
+rm google_compute_engine.txt
 echo "done."
 
 ################################################################################

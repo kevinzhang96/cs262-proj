@@ -104,7 +104,7 @@ class Crawler:
 		raise Exception
 
 	def dump(self, target):
-		if not os.path.isdir(target):
+		if not os.path.isdir(os.path.abspath(target)):
 			raise Exception
 
 		# dump the directory tree into JSON file
@@ -153,7 +153,7 @@ def walk(dir):
 '''
 def diff_helper(dir1, dir2):
 	if dir1['hash'] == dir2['hash']:
-		return []
+		return [], []
 
 	files, folders = [], []
 	for name, obj in dir1['contents'].items():
