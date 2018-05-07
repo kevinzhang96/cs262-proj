@@ -1,7 +1,7 @@
 import socket
 import sys
 
-def createSocket():
+def create_socket():
     sock = None
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

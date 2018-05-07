@@ -1,7 +1,8 @@
 #! /bin/bash
 USERNAME=$(curl -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/attributes/username")
-INSTANCE_BUCKET="gs://$USERNAME-$HOSTNAME"
-PROJECT_BUCKET="gs://$USERNAME-backup"
+RANDOM_NUM=$(curl -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/attributes/random_num")
+INSTANCE_BUCKET="$USERNAME-$HOSTNAME"
+PROJECT_BUCKET="$USERNAME-backup-$RANDOM_NUM"
 
 cd /home/$USERNAME
 
@@ -18,11 +19,11 @@ sudo apt-get install -y python-pip
 pip install paramiko
 
 if ! [ -d "backup" ]; then
-    gsutil mb -l us-east1 $INSTANCE_BUCKET
+    gsutil mb -l us-east1 gs://$INSTANCE_BUCKET
     mkdir backup; gcsfuse $INSTANCE_BUCKET backup
 fi
 
-gsutil cp -rom $PROJECT_BUCKET .
+gsutil cp -r gs://$PROJECT_BUCKET/* .
 cd ftp; sudo python server.py
 
 exit

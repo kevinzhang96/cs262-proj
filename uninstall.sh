@@ -3,8 +3,10 @@ if ! [[ $(which pip) ]]; then
   exit
 fi
 
-# first delete the project off of Google Cloud
-.sdk/bin/gcloud projects delete $USER-automatic-backup --quiet &> /dev/null
+# delete the project off of Google Cloud
+source config/install
+$PROJECT=$USERNAME-backup-$RANDOM_NUM
+.sdk/bin/gcloud projects delete $PROJECT --quiet &> /dev/null
 
 # uninstall pip and its packages
 for i in $( pip freeze ); do sudo pip uninstall -y $i &> /dev/null; done

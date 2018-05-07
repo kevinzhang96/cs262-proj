@@ -1,7 +1,7 @@
 import paramiko
 import os
 
-class SFTPAssistant:
+class SFTPConnection:
     def __init__(self, local, ssh):
         '''
             Utility class; connects to a remote host given the appropriate local
@@ -85,3 +85,38 @@ class SFTPAssistant:
 
     def download_all(self):
         raise Exception
+
+
+class InfoConnection():
+	def __init__(self, ip_addr):
+		self.replica_ip = ip_addr
+		self.sock = None
+
+	def connect(self):
+		assert self.sock is None
+		self.sock = create_socket()
+		self.sock.connect((self.replica_ip, 9000))
+
+	def close(self):
+		assert self.sock is not None
+		self.sock.close()
+		self.sock = None
+
+	def get_json(self):
+		assert self.sock is not None
+		self.sock.send("0")
+		json = ''
+		while True:
+			part = self.sock.recv(1024)
+			json += part
+			if len(part) < 1024:
+				break
+		return json
+
+	def run_consensus(self):
+		assert self.sock is not None
+		self.sock.send("1")
+
+	def send_replica_ip(self):
+		assert self.sock is not None
+		self.sock.send("2" + str(len(self.replica_ip)) + self.replica_ip)

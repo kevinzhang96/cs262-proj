@@ -3,17 +3,17 @@ import socket
 import sys
 import threading
 import time
-from crawler import Crawler
-from util import createSocket
+from consensus import run_consensus
+from json_helper import Crawler
+from util import create_socket
 
 PORT_NUMBER = 9000
 _crawler = Crawler()
 HOME_DIR = os.path.expanduser("~")
 BACKUP_DIR = os.path.join(HOME_DIR, "backup")
-
 SERVER_IP = None
 
-class Handler(threading.Thread):
+class ServerHandler(threading.Thread):
 
     def __init__(self, conn, addr):
         threading.Thread.__init__(self)
@@ -57,16 +57,15 @@ class Handler(threading.Thread):
         self.conn.send(str(_crawler.dump(BACKUP_DIR)))
 
     def consensus(self):
-        # TODO
-        pass
+        peer_ips = filter(len, open("../config/ips").read().split("\n"))
+        run_consensus(SERVER_IP, peer_ips)
 
     def receive_ip(self):
         ip_len = int(self.conn.recv(2))
         SERVER_IP = self.conn.recv(ip_len)
-        print SERVER_IP
 
 # create a socket and start listening for connections
-sock = createSocket()
+sock = create_socket()
 try:
     sock.bind(('', PORT_NUMBER))
     sock.listen(1)
@@ -76,7 +75,7 @@ except socket.error, e:
 try:
     while True:
         conn, addr = sock.accept()
-        handler = Handler(conn, addr)
+        handler = ServerHandler(conn, addr)
         handler.start()
 except KeyboardInterrupt:
     # clean shutdown function; stop all handlers and close the socket
