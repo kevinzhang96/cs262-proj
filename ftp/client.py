@@ -61,5 +61,10 @@ for server_ip in ips:
         print "Updating the server failed with error", str(e)
         continue
 
+print "Contacting a leader to run consensus now..."
 leader = random.choice(ips)
-run_consensus(leader, ips)
+c = InfoConnection(leader)
+if not c.connect():
+    print "Couldn't connect to leader", leader
+else:
+    c.run_consensus()
