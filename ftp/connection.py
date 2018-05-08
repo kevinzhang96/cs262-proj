@@ -62,7 +62,7 @@ class SFTPConnection:
 	def get(self, file):
 		if not self.ssh_client or not self.ftp_client:
 			raise Exception
-		self.ftp_client.get(os.path.join(self.r_path, file), file)
+		self.ftp_client.get(file, os.path.join(self.l_path, file))
 
 	def put(self, file):
 		if not self.ssh_client or not self.ftp_client:
@@ -83,18 +83,6 @@ class SFTPConnection:
 		if not self.ssh_client or not self.ftp_client:
 			raise Exception
 		self.ftp_client.rmdir(dir)
-
-	def upload_all(self):
-		for root, dirs, files in os.walk(self.l_path, topdown=True):
-			# go through all files and transfer them to remote
-			for dir_file in files:
-				path = os.path.join(root, dir_file)
-				self.put(path[len(self.l_path):])
-
-			# go through all directories and create them on remote
-			for sub_dir in dirs:
-				sub_dir_path = os.path.join(root, sub_dir)
-				self.mkdir(sub_dir_path[len(self.l_path):])
 
 	def download_all(self):
 		raise Exception
