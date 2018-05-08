@@ -20,12 +20,12 @@ pip install paramiko
 
 if ! [ -d "backup" ]; then
     gsutil mb -l us-east1 gs://$INSTANCE_BUCKET
-    sudo -u kevinzhang mkdir backup
-    sudo -u kevinzhang gcsfuse $INSTANCE_BUCKET backup
+    sudo -u $USERNAME mkdir backup
+    sudo -u $USERNAME gcsfuse $INSTANCE_BUCKET backup
 fi
 
 sudo gsutil cp -r gs://$PROJECT_BUCKET/* .
-sudo chown -R kevinzhang:kevinzhang **
-cd ftp; sudo -u kevinzhang python server.py
+sudo chown -R $USERNAME:$USERNAME **
+cd ftp; sudo -u $USERNAME python server.py
 
 exit
