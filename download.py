@@ -27,10 +27,12 @@ for server_ip in ips:
         print "Couldn't connect to", server_ip
     else:
         c.send_replica_ip()
-        c.run_consensus()
+        # c.run_consensus()
         server_json = c.get_json()
         server_json = json.loads(server_json.replace('\'', '\"'))
         found_replica = True
+        # c.close()
+        break
 
 if not found_replica:
     raise Exception("All servers are down. Download failed.")
@@ -41,7 +43,7 @@ diffs = diff(server_json, client_json)
 server_dirs.sort(key=lambda d: d.count("/"), reverse=True)
 client_dirs.sort(key=lambda d: d.count("/"), reverse=False)
 
-
+print "trying to establish sftp"
 # Establish a SFTP connection
 s = SFTPConnection(CLIENT_BACKUP_DIR, "../ssh/google_compute_engine")
 if not s.connect(server_ip, SERVER_BACKUP_DIR + "/", username):
