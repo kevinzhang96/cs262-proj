@@ -13,12 +13,23 @@ fi
 rm config/install
 rm .log
 
-N_REPLICAS=3
+echo "Input the number of replicas you would like to have (between 3~5)."
+while true; do
+  read input
+  if ! [ "$input" -eq "$input" ] 2> /dev/null; then
+    echo "Error: not an integer";
+  elif [ "$input" -lt 3 -o "$input" -gt 5 ]; then
+    echo "Error: integer needs to be between 3~5";
+  else break;
+  fi
+done
+
+N_REPLICAS=$input
 RANDOM_NUM=$(($RANDOM % 10000))
 USERNAME=$(who am i | awk '{print $1}')
 PROJECT_BUCKET="$USERNAME-backup-$RANDOM_NUM"
 CLIENT_DIR=$(dirname `dirname $PWD`)/backup
-echo "N_REPLICAS=3" 1>> config/install
+echo "N_REPLICAS=$N_REPLICAS" 1>> config/install
 echo "RANDOM_NUM=$RANDOM_NUM" 1>> config/install
 echo "USERNAME=$USERNAME" 1>> config/install
 echo "PROJECT_BUCKET=$PROJECT_BUCKET" 1>> config/install
