@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 import time
 from json_helper import Crawler, diff
 from connection import SFTPConnection, InfoConnection
@@ -10,12 +11,14 @@ ips = filter(len, open("../config/ips").read().split("\n"))
 config = open("../config/install").read().split("\n")
 username = filter(lambda k: "USERNAME" in k, config)[0].split("=")[1]
 SERVER_DIR = "/home/" + username + "/backup"
-CLIENT_DIR = "../backup"
+CLIENT_DIR = "../../backup"
 
 try:
     os.makedirs(CLIENT_DIR)
-except:
-    pass
+except OSError as e:
+    print "Couldn't make the backup directory..."
+    print str(e)
+    sys.exit()
 
 replica = None
 for server_ip in ips:
@@ -26,7 +29,7 @@ for server_ip in ips:
     else:
         c.send_replica_ip()
         c.run_consensus()
-        # time.sleep(300)
+        time.sleep(60)
         server_json = c.get_json()
         server_json = json.loads(server_json.replace('\'', '\"'))
         replica = server_ip
@@ -42,8 +45,7 @@ diffs = diff(server_json, client_json)
 server_dirs.sort(key=lambda d: d.count("/"), reverse=False)
 
 for server_dir in server_dirs:
-    print server_dir
-    os.makedirs(server_dir[len(SERVER_DIR) + 1:])
+    os.makedirs(os.path.join(CLIENT_DIR, server_dir[len(SERVER_DIR) + 1:]))
 
 print "Trying to establish sftp..."
 # Establish a SFTP connection
