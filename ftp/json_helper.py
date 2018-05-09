@@ -1,6 +1,6 @@
-import os
-import json
 import hashlib
+import json
+import os
 
 '''
 	Utility class used to calculate a JSON description of a desired directory.
