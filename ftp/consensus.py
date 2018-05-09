@@ -40,7 +40,7 @@ def run_consensus(leader, peers, username):
     peers = filter(lambda k: k != leader, peers)
 
     BACKUP_DIR = "/home/" + username + "/backup"
-    SSH_FILE = SSH_FILE
+    SSH_FILE = "../ssh/google_compute_engine"
 
     '''
         Steps 1 and 2: connect to each peer and obtain the JSON descriptors.

@@ -10,8 +10,8 @@ fi
 if ! [ -d "config" ]; then
   mkdir config
 fi
-rm config/install
-rm .log
+rm config/install &> /dev/null
+rm .log &> /dev/null
 
 echo "Input the number of replicas you would like to have (between 3~5)."
 while true; do
@@ -91,6 +91,8 @@ gcloud config configurations activate default 1>> .log 2>&1
 gcloud auth login 1>> .log 2>&1
 echo "done."
 
+echo "Your project's identifier is $RANDOM_NUM"
+
 ### Project ================================================================ ###
 printf "Creating backup project... "
 gcloud projects create $USERNAME-backup-$RANDOM_NUM 1>> .log 2>&1
@@ -131,8 +133,8 @@ for i in $(seq 1 $N_REPLICAS); do
     --scopes=storage-full,https://www.googleapis.com/auth/compute \
     --tags=http-server,https-server 1>> .log 2>&1
 done
-gcloud compute firewall-rules create 'allow-9000-in' --allow tcp:9000,udp:9000,icmp --direction=IN
-gcloud compute firewall-rules create 'allow-9000-out' --allow tcp:9000,udp:9000,icmp --direction=OUT
+gcloud compute firewall-rules create 'allow-9000-in' --allow tcp:9000,udp:9000,icmp --direction=IN 1>> .log 2>&1
+gcloud compute firewall-rules create 'allow-9000-out' --allow tcp:9000,udp:9000,icmp --direction=OUT 1>> .log 2>&1
 rm google_compute_engine.txt
 echo "done."
 
@@ -159,7 +161,7 @@ gsutil cp -r ftp gs://$PROJECT_BUCKET 1>> .log 2>&1
 gsutil cp -r config gs://$PROJECT_BUCKET 1>> .log 2>&1
 
 ### Update Cron Job ======================================================== ###
-(crontab -l ; echo "0 * * * * python $PWD/ftp/client.py"; echo 'MAILTO=""') | sort - | uniq - | crontab -
+sudo -u $USERNAME echo $(crontab -l) ; echo "60 * * * * python $PWD/ftp/client.py"; echo 'MAILTO=""' | sort - | uniq - | crontab -
 
 echo "done!"
 echo "Good to go!"
