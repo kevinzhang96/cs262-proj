@@ -33,7 +33,7 @@ for server_ip in ips:
     (client_files, client_dirs) = diffs[1]
     server_dirs.sort(key=lambda d: d.count("/"), reverse=True)
     client_dirs.sort(key=lambda d: d.count("/"), reverse=False)
-    
+   
     # attempt to initialize a SFTP connection
     s = SFTPConnection(CLIENT_BACKUP_DIR, "../ssh/google_compute_engine")
     if not s.connect(server_ip, SERVER_BACKUP_DIR + "/", username):

@@ -1,3 +1,4 @@
+import errno
 import json
 import os
 import socket
@@ -14,7 +15,6 @@ config = open("../config/install").read().split("\n")
 config = filter(lambda k: "USERNAME" in k, config)[0]
 username = config.split("=")[1]
 BACKUP_DIR = '/home/' + username + "/backup"
-SERVER_IP = None
 
 class ServerHandler(threading.Thread):
 
@@ -61,17 +61,17 @@ class ServerHandler(threading.Thread):
 
     def consensus(self):
         peer_ips = filter(len, open("../config/ips").read().split("\n"))
-        run_consensus(SERVER_IP, peer_ips, username)
+        run_consensus(self.server_ip, peer_ips, username)
 
     def receive_ip(self):
         ip_len = int(self.conn.recv(2))
-        SERVER_IP = self.conn.recv(ip_len)
+        self.server_ip = self.conn.recv(ip_len)
 
 # create a socket and start listening for connections
 sock = create_socket()
 try:
     sock.bind(('', PORT_NUMBER))
-    sock.listen(1)
+    sock.listen(3)
 except socket.error, e:
     print "Error: could not set up socket!\n", e
     sys.exit()
@@ -80,6 +80,7 @@ try:
         conn, addr = sock.accept()
         handler = ServerHandler(conn, addr)
         handler.start()
+        time.sleep(0.25)
 except KeyboardInterrupt:
     # clean shutdown function; stop all handlers and close the socket
     for handler in threading.enumerate():

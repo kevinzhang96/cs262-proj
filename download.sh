@@ -43,8 +43,8 @@ if ! [ -d ".sdk" ]; then
   curl https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-198.0.0-darwin-x86_64.tar.gz -o sdk.tar.gz
   gunzip -c sdk.tar.gz | tar xopf - 1>> .log 2>&1
   rm -rf sdk.tar.gz; mv google-cloud-sdk .sdk
-  chown -R $USERNAME .sdk
-  chown -R $USERNAME $HOME/.config
+  chown -R $USERNAME:staff .sdk
+  chown -R $USERNAME:staff $HOME/.config/gcloud
   echo "Done."
 fi
 
