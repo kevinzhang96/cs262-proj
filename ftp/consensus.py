@@ -104,108 +104,56 @@ def run_consensus(leader, peers, username):
             4. Add files for any servers that should have them
 
         We need to remove objects when:
-            1. Leader is correct and doesn't have the file
-            2. Leader is wrong and does have the file
+            1. Leader is correct and doesn't have the object
+            2. Leader is wrong and does have the object
         We need to add objects when:
-            1. Leader is correct and does have the file
-            2. Leader is wrong and doesn't have the file
+            1. Leader is correct and does have the object
+            2. Leader is wrong and doesn't have the object
     '''
     all_folders = sorted(lambda d: d.count("/"), folders.keys())
     for file in files:
-        if (
-            len(files[file]['conflict']) < n_peers / 2 and
-            not files[file]['leader_has']
-        ):
-            for peer in files[file]['conflict']:
-                s = SFTPConnection(BACKUP_DIR, SSH_FILE)
-                if not s.connect(peer, BACKUP_DIR, username):
-                    print "Couldn't remove", file, "from peer", peer
-                    continue
-                s.rm(file)
-        # leader is wrong and has the file; remove from all agreeing peers
-        if (
-            len(files[file]['conflict']) >= n_peers / 2 and
-            files[file]['leader_has']
-        ):
+        if len(files[file]['conflict']) < n_peers / 2 == files[file]['leader_has']:
+            continue
+        for peer in peers:
+            if files[file]['leader_has'] == peer in files[file]['conflict']:
+                continue
+            s = SFTPConnection(BACKUP_DIR, SSH_FILE)
+            if not s.connect(peer, BACKUP_DIR, username):
+                print "Couldn't remove", file, "from peer", peer
+                continue
+            s.rm(file)
+        if files[file]['leader_has']:
             os.remove(file)
-            for peer in peers:
-                if peer in files[file]['conflict']:
-                    continue
-                s = SFTPConnection(BACKUP_DIR, SSH_FILE)
-                if not s.connect(peer, BACKUP_DIR, username):
-                    print "Couldn't remove", file, "from peer", peer
-                    continue
-                s.rm(file)
     for folder in reversed(all_folders):
-        # leader is correct and doesn't have the folder; remove folder from conflict peers
-        if (
-            len(folders[folder]['conflict']) < n_peers / 2 and
-            not folders[folder]['leader_has']
-        ):
-            for peer in folders[folder]['conflict']:
-                s = SFTPConnection(BACKUP_DIR, SSH_FILE)
-                if not s.connect(peer, BACKUP_DIR, username):
-                    print "Couldn't remove", folder, "from peer", peer
-                    continue
-                s.rmdir(folder)
-        # leader is wrong and has the folder; remove from all agreeing peers
-        if (
-            len(files[file]['conflict']) >= n_peers / 2 and
-            files[file]['leader_has']
-        ):
+        if len(folders[folder]['conflict']) < n_peers / 2 == folders[folder]['leader_has']:
+            continue
+        for peer in peers:
+            if folders[folder]['leader_has'] == peer in folders[folder]['conflict']:
+                continue
+            s = SFTPConnection(BACKUP_DIR, SSH_FILE)
+            if not s.connect(peer, BACKUP_DIR, username):
+                print "Couldn't remove", folder, "from peer", peer
+                continue
+            s.rmdir(folder)
+        if folders[folder]['leader_has']:
             os.rmdir(folder)
-            for peer in peers:
-                if peer in files[file]['conflict']:
-                    continue
-                s = SFTPConnection(BACKUP_DIR, SSH_FILE)
-                if not s.connect(peer, BACKUP_DIR, username):
-                    print "Couldn't remove", folder, "from peer", peer
-                    continue
-                s.rmdir(folder)
     for folder in all_folders:
-        # leader is correct and has the folder; add folder to conflicting peers
-        if (
-            len(folders[folder]['conflict']) < n_peers / 2 and
-            folders[folder]['leader_has']
-        ):
-            for peer in folders[folder]['conflict']:
-                s = SFTPConnection(BACKUP_DIR, SSH_FILE)
-                if not s.connect(peer, BACKUP_DIR, username):
-                    print "Couldn't add", folder, "to peer", peer
-                    continue
-                s.mkdir(folder)
-        # leader is wrong and doesn't have the folder; add to all agreeing peers
-        if (
-            len(files[file]['conflict']) >= n_peers / 2 and
-            not folders[folder]['leader_has']
-        ):
+        if len(files[file]['conflict']) < n_peers / 2 != folders[folder]['leader_has']:
+            continue
+        for peer in peers:
+            if folders[folder]['leader_has'] != peer in folders[folder]['conflict']:
+                continue
+            s = SFTPConnection(BACKUP_DIR, SSH_FILE)
+            if not s.connect(peer, BACKUP_DIR, username):
+                print "Couldn't add", folder, "to peer", peer
+                continue
+            s.mkdir(folder)
+        if not folders[folder]['leader_has']:
             os.mkdir(folder)
-            for peer in peers:
-                if peer in files[file]['conflict']:
-                    continue
-                s = SFTPConnection(BACKUP_DIR, SSH_FILE)
-                if not s.connect(peer, BACKUP_DIR, username):
-                    print "Couldn't add", folder, "to peer", peer
-                    continue
-                s.mkdir(folder)
     for file in files:
-        # leader is correct and has the file; add file to conflicting peers
-        if (
-            len(files[file]['conflict']) < n_peers / 2 and
-            files[file]['leader_has']
-        ):
-            for peer in files[file]['conflict']:
-                s = SFTPConnection(BACKUP_DIR, SSH_FILE)
-                if not s.connect(peer, BACKUP_DIR, username):
-                    print "Couldn't add", file, "to peer", peer
-                    continue
-                s.put(file)
-        # leader is wrong and doesn't have the file; add to all agreeing peers
-        if (
-            len(files[file]['conflict']) >= n_peers / 2 and
-            not files[file]['leader_has']
-        ):
-            # get the file first
+        if len(files[file]['conflict']) < n_peers / 2 != files[file]['leader_has']:
+            continue
+        if not files[file]['leader_has']:
             received = False
             for peer in peers:
                 if peer not in files[file]['conflict']:
@@ -219,11 +167,11 @@ def run_consensus(leader, peers, username):
             if not received:
                 print "Couldn't get file", file, "from any peers"
                 continue
-            for peer in peers:
-                if peer in files[file]['conflict']:
-                    continue
-                s = SFTPConnection(BACKUP_DIR, SSH_FILE)
-                if not s.connect(peer, BACKUP_DIR, username):
-                    print "Couldn't add", file, "to peer", peer
-                    continue
-                s.put(file)
+        for peer in peers:
+            if files[file]['leader_has'] != peer in files[file]['conflict']:
+                continue
+            s = SFTPConnection(BACKUP_DIR, SSH_FILE)
+            if not s.connect(peer, BACKUP_DIR, username):
+                print "Couldn't add", file, "to peer", peer
+                continue
+            s.put(file)
