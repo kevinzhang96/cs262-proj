@@ -135,6 +135,7 @@ for i in $(seq 1 $N_REPLICAS); do
 done
 gcloud compute firewall-rules create 'allow-9000-in' --allow tcp:9000,udp:9000,icmp --direction=IN 1>> .log 2>&1
 gcloud compute firewall-rules create 'allow-9000-out' --allow tcp:9000,udp:9000,icmp --direction=OUT 1>> .log 2>&1
+gcloud compute firewall-rules create 'allow-22-out' --allow tcp:22,udp:22,icmp --direction=OUT 1>> .log 2>&1
 rm google_compute_engine.txt
 echo "done."
 
@@ -161,7 +162,7 @@ gsutil cp -r ftp gs://$PROJECT_BUCKET 1>> .log 2>&1
 gsutil cp -r config gs://$PROJECT_BUCKET 1>> .log 2>&1
 
 ### Update Cron Job ======================================================== ###
-sudo -u $USERNAME echo $(crontab -l) ; echo "60 * * * * python $PWD/ftp/client.py"; echo 'MAILTO=""' | sort - | uniq - | crontab -
-
+CLIENT_JOB="0 * * * * python $PWD/ftp/client.py"
+sudo -u $USERNAME crontab -l | { cat; echo "$CLIENT_JOB"; echo 'MAILTO=""'; } | sort - | uniq - | crontab
 echo "done!"
 echo "Good to go!"
