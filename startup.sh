@@ -26,6 +26,6 @@ fi
 
 sudo gsutil cp -r gs://$PROJECT_BUCKET/* .
 sudo chown -R $USERNAME:$USERNAME **
-cd ftp; sudo -u $USERNAME python server.py
+cd ftp; sudo -u $USERNAME python server.py &> ../.log
 
 exit
