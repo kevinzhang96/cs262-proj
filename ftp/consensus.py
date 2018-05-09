@@ -1,4 +1,4 @@
-import json, shutil
+import json, os, shutil
 from connection import InfoConnection, SFTPConnection
 from json_helper import Crawler, diff
 
@@ -64,20 +64,24 @@ def run_consensus(leader, peers, username):
     files = {}
     folders = {}
     for peer, difference in differences.items():
-        (leader_files, leader_dirs) = differences[0]
-        (server_files, server_dirs) = differences[1]
+        (leader_files, leader_dirs) = difference[0]
+        (server_files, server_dirs) = difference[1]
         for leader_file in leader_files:
             if leader_file not in files:
                 files[leader_file] = {
                     'leader_has': True,
-                    'conflict': []
+                    'conflict': [peer]
                 }
+            else:
+                files[leader_file]['conflict'].append(peer)
         for leader_dir in leader_dirs:
             if leader_dir not in folders:
                 folders[leader_dir] = {
                     'leader_has': True,
-                    'conflict': []
+                    'conflict': [peer]
                 }
+            else:
+                folders[leader_dir]['conflict'].append(peer)
         for server_file in server_files:
             if server_file not in files:
                 files[server_file] = {
@@ -86,6 +90,7 @@ def run_consensus(leader, peers, username):
                 }
             else:
                 files[server_file]['conflict'].append(peer)
+        for server_dir in server_dirs:
             if server_dir not in folders:
                 folders[server_dir] = {
                     'leader_has': False,
@@ -110,7 +115,7 @@ def run_consensus(leader, peers, username):
             1. Leader is correct and does have the object
             2. Leader is wrong and doesn't have the object
     '''
-    all_folders = sorted(lambda d: d.count("/"), folders.keys())
+    all_folders = sorted(folders.keys(), lambda d: d.count("/"))
     for file in files:
         if len(files[file]['conflict']) < n_peers / 2 == files[file]['leader_has']:
             continue
